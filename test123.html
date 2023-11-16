@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .moving-image {
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    function createAndMoveImage() {
+      const image = document.createElement('img');
+      image.src = 'zombie0.png'; // Replace with the actual image source
+      image.className = 'moving-image';
+      document.body.appendChild(image);
+
+      let position = window.innerWidth; // Start from the right edge of the window
+
+      function moveImage() {
+        position -= 10;
+        image.style.left = position + 'px';
+
+        if (position > -image.width) {
+          requestAnimationFrame(moveImage);
+        } else {
+          document.body.removeChild(image);
+        }
+      }
+
+      moveImage();
+    }
+
+    setInterval(createAndMoveImage, 2000); // Adjust the interval as needed
+  </script>
+</body>
+</html>
