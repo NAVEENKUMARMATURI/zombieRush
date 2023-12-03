@@ -21,26 +21,28 @@
 		</style>
 		<script>
 			function moveGunner(gunnerDir) {
-				var counter = 0;
-				var move = 1;
-				var gunAnime = setInterval(gunnerAnimeMove, 40);
-				function gunnerAnimeMove(){
-					if((gunnerDir == "down") && gunnerbase.offsetTop < 720 && move <= 8){
-						gunnerbase.src = "gunnerup" + counter + ".png";
-						gunnerbase.style.top = (gunnerbase.offsetTop + 10) + "px";
+				if (!coolDown && !reloading){
+					var counter = 0;
+					var move = 1;
+					var gunAnime = setInterval(gunnerAnimeMove, 40);
+					function gunnerAnimeMove(){
+						if((gunnerDir == "down") && gunnerbase.offsetTop < 720 && move <= 8){
+							gunnerbase.src = "gunnerup" + counter + ".png";
+							gunnerbase.style.top = (gunnerbase.offsetTop + 10) + "px";
+						}
+						else if ((gunnerDir == "up") && gunnerbase.offsetTop > 0 && move <= 8){
+							gunnerbase.src = "gunnerup" + counter + ".png";
+							gunnerbase.style.top = (gunnerbase.offsetTop - 10) + "px";	
+						}
+						if(counter == 7 && move == 8){
+							counter = 0;
+							move = 1;
+							gunnerbase.src = "gunnerbase.png";
+							clearInterval(gunAnime);
+						}
+						counter++;
+						move++;
 					}
-					else if ((gunnerDir == "up") && gunnerbase.offsetTop > 0 && move <= 8){
-						gunnerbase.src = "gunnerup" + counter + ".png";
-						gunnerbase.style.top = (gunnerbase.offsetTop - 10) + "px";	
-					}
-					if(counter == 7 && move == 8){
-						counter = 0;
-						move = 1;
-						gunnerbase.src = "gunnerbase.png";
-						clearInterval(gunAnime);
-					}
-					counter++;
-					move++;
 				}
 			}
 			function usertouch(event) {
@@ -65,53 +67,68 @@
 					moveGunner(gunnerDir);
 				}
 			}
+			function reloadBullets() {
+				var gunReloadAudio = document.createElement("audio");
+                var gunReloadSource = document.createElement("source");
+                gunReloadSource.src = "reload.mp3";
+                gunReloadAudio.appendChild(gunReloadSource);
+                gunReloadAudio.play();
+                ammoLeft.innerHTML = 10;
+                gunStatus.innerHTML = "ready";
+                shoot = true;
+                reloading = false;
+			}
+			function shootAnime() {
+				var shootCounter = 0;
+				var gunShootAudio = document.createElement("audio");
+                var gunShootSource = document.createElement("source");
+                gunShootSource.src = "gunshot.mp3";
+                gunShootAudio.appendChild(gunShootSource);
+                gunShootAudio.play();
+                var gunshootAnimation = setInterval(shootAnimation, 40);
+                function shootAnimation() {
+                	gunnerbase.src = "gunnerfire" + shootCounter + ".png";
+					if(shootCounter == 2){
+						shootCounter = 0;
+						gunnerbase.src = "gunnerbase.png";
+						clearInterval(gunshootAnimation);
+					}
+					shootCounter++;
+                }
+                var allZombies = document.getElementsByTagName('img');
+				for(var i = 0; i< allZombies.length; i++){
+					var zombie = allZombies[i];
+					if (('z' == zombie.id.charAt(0)) 
+						&& (gunnerbase.style.top == zombie.style.top) 
+							&& (zombie.title == "alive")) {
+						zombieDieAnimation(zombie);
+						zombie.title = "dead";
+						allZombies.splice(i, 1);
+						i--;
+					}
+				}
+			}
+			var shoot = true;
+			var reloading = false;
+			var coolDown = false;
 			function shootGunner(event) {
 				if(stop){
 					var bullets = ammoLeft.innerHTML;
 					if(bullets == 0 || event.keyCode == 82 || event.keyCode == 114 || event == "reload"){
-						gunStatus.innerHTML = "reloading";
-						var reload = setTimeout(reloadBullets, 3000);
-						function reloadBullets() {
-							var gunReloadAudio = document.createElement("audio");
-			                var gunReloadSource = document.createElement("source");
-			                gunReloadSource.src = "reload.mp3";
-			                gunReloadAudio.appendChild(gunReloadSource);
-			                gunReloadAudio.play();
-			                ammoLeft.innerHTML = 10;
-			                gunStatus.innerHTML = "ready";
+						if(!reloading){
+							gunStatus.innerHTML = "reloading";
+							shoot = false;
+							reloading = true;
+							setTimeout(reloadBullets, 3000);
 						}
 					}
-					if((event.keyCode == 32 || event == "shoot") && bullets != 0 && gunStatus.innerHTML == "ready"){
-						var shootCounter = 0;
-						bullets--;
-						ammoLeft.innerHTML = bullets;
-						var gunshootAnimation = setInterval(shootAnime, 40);
-						function shootAnime() {
-							var gunShootAudio = document.createElement("audio");
-			                var gunShootSource = document.createElement("source");
-			                gunShootSource.src = "gunshot.mp3";
-			                gunShootAudio.appendChild(gunShootSource);
-			                gunShootAudio.play();
-							gunnerbase.src = "gunnerfire" + shootCounter + ".png";
-							if(shootCounter == 2){
-								shootCounter = 0;
-								gunnerbase.src = "gunnerbase.png";
-								clearInterval(gunshootAnimation);
-							}
-							shootCounter++;
-							// setTimeout(shootAnime, 1000);
-						}
-						var allZombies = document.getElementsByTagName('img');
-						for(var i = 0; i< allZombies.length; i++){
-							var zombie = allZombies[i];
-							if (('z' == zombie.id.charAt(0)) 
-								&& (gunnerbase.style.top == zombie.style.top) 
-									&& (zombie.title == "alive")) {
-								zombieDieAnimation(zombie);
-								zombie.title = "dead";
-								allZombies.splice(i, 1);
-								i--;
-							}
+					else if(event.keyCode == 32 || event == "shoot") {
+						if(shoot && bullets > 0 && gunStatus.innerHTML == "ready" && !coolDown) {
+							bullets--;
+							ammoLeft.innerHTML = bullets;
+							shootAnime();
+							coolDown = true;
+							setTimeout(function () {coolDown = false;}, 1000)
 						}
 					}
 				}
